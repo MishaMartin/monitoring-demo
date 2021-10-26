@@ -18,15 +18,31 @@ app.get('/', (req,res) => {
     rollbar.info('html file served successfully')
 })
 
+app.get('/style', (req,res) => {
+    res.sendFile(path.join(__dirname, '/public/styles.css'))
+})
+
 let students = []
 
 app.post('/api/student', (req,res) => {
     let {name} = req.body
     name = name.trim()
 
-    students.push(name)
+    const index = students.findIndex(studentName => studentName === name)
+
+    if(index === -1 && name !== ''){
+        students.push(name)
     rollbar.log('Student added successfully', {author: "Misha", type: 'manual entry'})
     res.status(200).send(students)
+    } else if (name === ''){
+        // below is what it means to have a custom error message in rollbar
+        rollbar.error('No name given')
+        // this will send a message to the user about what they need to do tp resolve this error
+        res.status(400).send('Must provide a name.')
+    } else {
+        rollbar.critical('Student already exists')
+        res.status(400).send('That student already exists')
+    }
 })
 
 app.use(rollbar.errorHandler())
